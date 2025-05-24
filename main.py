@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Text
 from flask_wtf import FlaskForm
+from werkzeug.security import generate_password_hash
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired, URL
 from flask_ckeditor import CKEditor, CKEditorField
@@ -13,6 +14,7 @@ from datetime import date, datetime
 from flask import Flask, render_template, request
 from dotenv import load_dotenv
 import os
+from forms import NewPostForm, RegisterForm
 
 load_dotenv()
 
@@ -26,10 +28,8 @@ app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 ckeditor = CKEditor(app)
 
-
 class Base(DeclarativeBase):
     pass
-
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
 app.config['SECRET_KEY'] = "powerful secretkey"
@@ -38,9 +38,9 @@ app.config['CKEDITOR_PKG_TYPE'] = 'basic'
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
-
 # CONFIGURE TABLE
 class BlogPost(db.Model):
+    __tablename__ = "blog_posts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -50,9 +50,15 @@ class BlogPost(db.Model):
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
 
 
+class User(db.Model):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(String(250), nullable=False)
+    name: Mapped[str] = mapped_column(String(250), nullable=False)
+
 with app.app_context():
     db.create_all()
-
 
 @app.route('/')
 def home():
@@ -60,31 +66,37 @@ def home():
         posts = db.session.execute(db.select(BlogPost).order_by(BlogPost.date)).scalars().all()
     return render_template("index.html", posts=posts)
 
-
 @app.route('/about')
 def about():
     return render_template("about.html")
-
 
 @app.route('/contact')
 def contact():
     return render_template("contact.html")
 
-
 @app.route('/login')
 def login():
     return render_template("login.html")
 
+@app.route('/register', methods=["POST", "GET"])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+        password = generate_password_hash(password=form.password.data, method='pbkdf2:sha256', salt_length=8)
+        name = form.name.data
+        new_user = User(email= form.email.data, name= name, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for("dashboard"))
+    return render_template("register.html", form=form)
 
-@app.route('/dashboard', methods=["post"])
+@app.route('/logout')
+def logout():
+    return redirect(url_for('home'))
+
+@app.route('/dashboard')
 def dashboard():
-    username = "none"
-    password = "none"
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-    return render_template('dashboard.html', name=username, password=password)
-
+    return render_template('dashboard.html')
 
 @app.route("/form-entry", methods=["post"])
 def receive_data():
@@ -96,23 +108,11 @@ def receive_data():
         connection.sendmail(from_addr=email, to_addrs=GMAIL_ADDRESS, msg=f'Subject: From your webpage \n\n {message}')
     return render_template("message.html", message=message)
 
-
 @app.route("/post/<int:uuid>")
 def get_post(uuid):
     with app.app_context():
         requested_post = db.session.execute(db.select(BlogPost).where(BlogPost.id == uuid)).scalar()
     return render_template('post.html', post=requested_post)
-
-
-# TODO: add_new_post() to create a new blog post
-class NewPostForm(FlaskForm):
-    title = StringField("title", validators=[DataRequired()])
-    subtitle = StringField('subtitle', validators=[DataRequired()])
-    author = StringField("author", validators=[DataRequired()])
-    img_url = StringField("img url", validators=[DataRequired()])
-    body = CKEditorField('Body')
-    submit = SubmitField('Create new post')
-
 
 @app.route("/new-post", methods=["POST", "GET"])
 def add_new_post():
@@ -131,8 +131,6 @@ def add_new_post():
         return redirect('/')
     return render_template("make-post.html", form=form)
 
-
-# TODO: edit_post() to change an existing blog post
 @app.route("/edit-post/<uuid>", methods=["POST", "GET"])
 def edit_post(uuid):
     edited_post = db.session.execute(db.select(BlogPost).where(BlogPost.id == uuid)).scalar()
@@ -151,14 +149,12 @@ def edit_post(uuid):
         return redirect('/')
     return render_template("make-post.html", form=form)
 
-# TODO: delete_post() to remove a blog post from the database
 @app.route('/delete/<uuid>')
 def delete_post(uuid):
     post = db.get_or_404(BlogPost, uuid)
     db.session.delete(post)
     db.session.commit()
     return redirect("/")
-
 
 if __name__ == "__main__":
     app.run(debug=True)
