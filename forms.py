@@ -14,14 +14,17 @@ class NewPostForm(FlaskForm):
     body = CKEditorField('Body')
     submit = SubmitField('Create new post')
 
-# TODO: Create a RegisterForm to register new users
+#RegisterForm to register new users
 class RegisterForm(FlaskForm):
     name = StringField("name", validators=[DataRequired()])
     email = EmailField("email", validators=[DataRequired()])
     password = PasswordField("password", validators=[DataRequired()])
     submit = SubmitField("Register")
 
-# TODO: Create a LoginForm to login existing users
-
+#LoginForm to login existing users
+class LoginForm(FlaskForm):
+    email = EmailField("email", validators=[DataRequired()])
+    password = PasswordField("password", validators=[DataRequired()])
+    submit = SubmitField("Login")
 
 # TODO: Create a CommentForm so users can leave comments below posts
