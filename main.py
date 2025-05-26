@@ -1,4 +1,5 @@
 import smtplib
+from functools import wraps
 from wsgiref.validate import validator
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap5
@@ -62,6 +63,14 @@ class User(db.Model, UserMixin):
 with app.app_context():
     db.create_all()
 
+def admin_only(f):
+    @wraps(f)
+    def is_admin(*args, **kwargs):
+        if not current_user.id == 1:
+            return redirect(url_for('login'))
+        return  f(*args, **kwargs)
+    return is_admin
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.get_or_404(User, user_id)
@@ -104,7 +113,8 @@ def register():
         password = generate_password_hash(password=form.password.data, method='pbkdf2:sha256', salt_length=8)
         name = form.name.data
         email = form.email.data
-        user_exists = db.session.execute(db.session(User).where(User.email == email)).scalar()
+
+        user_exists = db.session.execute(db.select(User).where(User.email == email)).scalar()
         if user_exists:
             flash("User already exist, please login.")
             return redirect(url_for("login"))
@@ -144,6 +154,7 @@ def get_post(uuid):
     return render_template('post.html', post=requested_post, current_user=current_user)
 
 @app.route("/new-post", methods=["POST", "GET"])
+@admin_only
 def add_new_post():
     form = NewPostForm()
     if form.validate_on_submit():
@@ -161,6 +172,7 @@ def add_new_post():
     return render_template("make-post.html", form=form, current_user=current_user)
 
 @app.route("/edit-post/<uuid>", methods=["POST", "GET"])
+@admin_only
 def edit_post(uuid):
     edited_post = db.session.execute(db.select(BlogPost).where(BlogPost.id == uuid)).scalar()
     form = NewPostForm(title=edited_post.title,
@@ -179,6 +191,7 @@ def edit_post(uuid):
     return render_template("make-post.html", form=form, current_user=current_user)
 
 @app.route('/delete/<uuid>')
+@admin_only
 def delete_post(uuid):
     post = db.get_or_404(BlogPost, uuid)
     db.session.delete(post)
