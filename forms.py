@@ -1,0 +1,32 @@
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
+from wtforms.fields.simple import EmailField, PasswordField
+from wtforms.validators import DataRequired, URL
+from flask_ckeditor import CKEditorField
+
+# WTForm for creating a blog post
+class NewPostForm(FlaskForm):
+    title = StringField("title", validators=[DataRequired()])
+    subtitle = StringField('subtitle', validators=[DataRequired()])
+    author = StringField("author", validators=[DataRequired()])
+    img_url = StringField("img url", validators=[DataRequired()])
+    body = CKEditorField('Body')
+    submit = SubmitField('Create new post')
+
+#RegisterForm to register new users
+class RegisterForm(FlaskForm):
+    name = StringField("name", validators=[DataRequired()])
+    email = EmailField("email", validators=[DataRequired()])
+    password = PasswordField("password", validators=[DataRequired()])
+    submit = SubmitField("Register")
+
+#LoginForm to login existing users
+class LoginForm(FlaskForm):
+    email = EmailField("email", validators=[DataRequired()])
+    password = PasswordField("password", validators=[DataRequired()])
+    submit = SubmitField("Login")
+
+#CommentForm so users can leave comments below posts
+class CommentForm(FlaskForm):
+    comment = CKEditorField('comment')
+    submit = SubmitField('Add comment')

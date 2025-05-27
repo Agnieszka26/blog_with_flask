@@ -1,31 +1,54 @@
 {% include "head.html" %}
-        <!-- Page Header-->
-        <header class="masthead" style="background-image: url({{post['image_url']}})">
-            <div class="container position-relative px-4 px-lg-5">
-                <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <div class="col-md-10 col-lg-8 col-xl-7">
-                        <div class="post-heading">
-                            <h1>{{post['title']}}</h1>
-                            <h2 class="subheading">{{post['subtitle']}}</h2>
-                            <span class="meta">
+<!-- Page Header-->
+<header class="masthead" style="background-image: url({{post['img_url']}})">
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="post-heading">
+                    <h1>{{post['title']}}</h1>
+                    <h2 class="subheading">{{post['subtitle']}}</h2>
+                    <span class="meta">
                                 Posted by
-                                <a href="#!">Start Bootstrap</a>
-                                on August 24, 2023
+                                <a href="#!">{{post['author_name']}}</a>
+                                on {{post['date']}}
                             </span>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </header>
-        <!-- Post Content-->
-        <article class="mb-4">
-            <div class="container px-4 px-lg-5">
-                <div class="row gx-4 gx-lg-5 justify-content-center">
-                    <div class="col-md-10 col-lg-8 col-xl-7">
-    <p>{{post['body']}}</p>
-                    </div>
-                </div>
+        </div>
+    </div>
+</header>
+<article class="mb-4">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <p>{{post['body']|safe }}</p>
             </div>
-        </article>
+        </div>
+    </div>
+</article>
+{% if current_user.id == 1: %}
+<div class="d-flex justify-content-center mb-4">
+    <a class="btn btn-primary float-right" href={{url_for('edit_post',uuid=post['id'])}}>
+        Edit Post
+    </a>
+</div>
+{% endif %}
+<div class="container">
+    {% from 'bootstrap5/form.html' import render_form %}
+    {% include "error_flash.html" %}
+    {{ ckeditor.load() }}
+    {{ ckeditor.config(name='comment_text') }}
+    {{ render_form(form, novalidate=True) }}
+</div>
+
+<div class="container mx-auto">
+    {% for comment in post['comments'] %}
+    <div class="border rounded-3 p-2 m-t-4">
+        <p class="text-primary font-weight-bold p-2 ">{{comment.comment_author.name }} : </p>
+        <p class=""> {{comment.text|safe }}</p>
+
+    </div>
+    {% endfor %}
+</div>
 
 {% include "footer.html" %}

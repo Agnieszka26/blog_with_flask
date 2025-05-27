@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% include "head.html" %}
+{% include "base_header.html" %}
+<div class="container position-relative mx-auto px-lg-auto">
+    <h2 class="post-title">HELOO ! Your name: {{current_user.name}}</h2>
+</div>
+
+
+{% include "footer.html" %}
