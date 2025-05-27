@@ -20,6 +20,10 @@ GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD")
 GMAIL_HOST_NAME = os.getenv("GMAIL_HOST_NAME")
 PORT = int(os.getenv("PORT"))
 TIMEOUT = int(os.getenv("TIMEOUT"))
+SECRET_KEY = os.getenv("FLASK_KEY")
+WTF_CSRF_SECRET_KEY = os.getenv("WTF_CSRF_SECRET_KEY")
+SQLALCHEMY_DATABASE_URI=os.getenv("SQLALCHEMY_DATABASE_URI")
+CKEDITOR_PKG_TYPE = os.getenv("CKEDITOR_PKG_TYPE")
 
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
@@ -30,10 +34,11 @@ login_manager.init_app(app)
 class Base(DeclarativeBase):
     pass
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
-app.config['SECRET_KEY'] = "powerful secretkey"
-app.config['WTF_CSRF_SECRET_KEY'] = "a csrf secret key"
-app.config['CKEDITOR_PKG_TYPE'] = 'basic'
+app.config['SQLALCHEMY_DATABASE_URI'] =SQLALCHEMY_DATABASE_URI
+app.config['SECRET_KEY'] = SECRET_KEY
+app.config['WTF_CSRF_SECRET_KEY'] = WTF_CSRF_SECRET_KEY
+app.config['CKEDITOR_PKG_TYPE'] = CKEDITOR_PKG_TYPE
+
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
@@ -178,7 +183,7 @@ def add_new_post():
         with app.app_context():
             current_date = datetime.now().strftime("%B %d, %Y")
             new_post = BlogPost(title=form.title.data,
-                                author=form.author.data,
+                                author=current_user,
                                 subtitle=form.subtitle.data,
                                 img_url=form.img_url.data,
                                 body=form.body.data,
@@ -193,13 +198,13 @@ def add_new_post():
 def edit_post(uuid):
     edited_post = db.session.execute(db.select(BlogPost).where(BlogPost.id == uuid)).scalar()
     form = NewPostForm(title=edited_post.title,
-                                author=edited_post.author,
+                                author=current_user,
                                 subtitle=edited_post.subtitle,
                                 img_url=edited_post.img_url,
                                 body=edited_post.body)
     if form.validate_on_submit():
         edited_post.title=form.title.data
-        edited_post.author=form.author.data
+        edited_post.author=current_user
         edited_post.subtitle=form.subtitle.data
         edited_post.img_url=form.img_url.data
         edited_post.body=form.body.data
@@ -216,4 +221,4 @@ def delete_post(uuid):
     return redirect("/")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
