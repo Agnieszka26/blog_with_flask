@@ -4,7 +4,6 @@ from wtforms.fields.simple import EmailField, PasswordField
 from wtforms.validators import DataRequired, URL
 from flask_ckeditor import CKEditorField
 
-
 # WTForm for creating a blog post
 class NewPostForm(FlaskForm):
     title = StringField("title", validators=[DataRequired()])
@@ -27,4 +26,7 @@ class LoginForm(FlaskForm):
     password = PasswordField("password", validators=[DataRequired()])
     submit = SubmitField("Login")
 
-# TODO: Create a CommentForm so users can leave comments below posts
+#CommentForm so users can leave comments below posts
+class CommentForm(FlaskForm):
+    comment = CKEditorField('comment')
+    submit = SubmitField('Add comment')
